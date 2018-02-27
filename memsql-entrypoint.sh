@@ -2,7 +2,7 @@
 set -e
 
 if [[ "$1" = "memsqld" ]]; then
-    memsql-ops start
+    memsql-ops start "$@"
 
     #Eliminate Minimum Core Count Requirement
     memsql-ops memsql-update-config --all --key minimum_core_count --value 0
