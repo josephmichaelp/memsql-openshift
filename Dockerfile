@@ -14,7 +14,10 @@ RUN apt-get update && \
         curl \
         jq \
         python-dev \
-        python-pip && \
+        python-pip \
+        net-tools \
+        netcat \
+    && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -31,7 +34,7 @@ ENV LANG en_US.utf8
 RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
 # setup directories
-RUN mkdir /memsql /memsql-ops
+RUN mkdir /data /memsql-ops
 
 # download and install MemSQL Ops
 # then reduce size by symlinking objdir and lib from one install to the other
@@ -44,13 +47,15 @@ COPY memsql-shell /usr/local/bin/memsql-shell
 COPY check-system /usr/local/bin/check-system
 COPY simple-benchmark /usr/local/bin/simple-benchmark
 
-VOLUME ["/memsql"]
-
 COPY memsql-entrypoint.sh /
+
+RUN chgrp -R 0   /data /memsql-ops /tmp /var /etc && \
+    chmod -R g=u /data /memsql-ops /tmp /var /etc
+
+VOLUME ["/data"]
 
 ENTRYPOINT ["/memsql-entrypoint.sh"]
 CMD ["memsqld"]
 
 # expose ports
-EXPOSE 3306
-EXPOSE 9000
+EXPOSE 3306 3307 9000
