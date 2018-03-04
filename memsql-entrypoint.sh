@@ -51,11 +51,10 @@ if [[ "$1" = "memsqld" ]]; then
     memsql-ops memsql-update-config --set-global --key default_partitions_per_leaf --value ${PARTITIONS_PER_LEAF:-2} $(memsql-ops memsql-list --memsql-role=master -q)
     memsql-ops memsql-update-config --all --key maximum_memory --value ${MEMORY_LIMIT} --all
 
-    # Check for a schema file at /schema.sql and load it
-    if [[ -e /schema.sql ]]; then
+    # Check for a schema file at /schema/data.sql and load it
+    if [[ -e /schema/data.sql ]]; then
         echo "Loading schema from /schema.sql"
-        cat /schema.sql
-        memsql < /schema.sql
+        memsql < /schema/data.sql
     fi
 
     # Tail the logs to keep the container alive
