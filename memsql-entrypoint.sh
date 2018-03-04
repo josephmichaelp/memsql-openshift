@@ -2,6 +2,12 @@
 set -e
 set -x
 
+source /tmp/VERSIONS
+
+export POD_NAME=$(hostname)
+export POD_ORDINAL=${POD_NAME##*-}
+export STATEFULSET_NAME=$(echo "${POD_NAME}" | sed -e 's/-[0-9]*$//g')
+
 if ! whoami &> /dev/null; then
   echo "Creating user UID entry..."
   if [ -w /etc/passwd ]; then
@@ -11,23 +17,8 @@ if ! whoami &> /dev/null; then
   echo "User UID created."
 fi
 
-function init_node_directory {
-    local node_role=$1
-
-    export node_id=$(memsql-ops memsql-list --memsql-role=${node_role} -q)
-    export node_path=$(memsql-ops memsql-path ${node_id})
-
-    if [[ ! -e /data/${node_role} ]]; then
-        mv ${node_path} /data/${node_role}
-    else
-        rm -rf ${node_path}
-    fi
-
-    ln -s /data/${node_role} ${node_path}
-}
-
 if [[ "$1" = "memsqld" ]]; then
-    MEMORY_LIMIT=$(echo | awk '{ print '${MEMORY_LIMIT}'*0.8 /1024/1024}')
+    MEMORY_LIMIT=$(echo | awk '{ print int('${MEMORY_LIMIT}'*0.8 /1024/1024)}')
 
     sed -i '/user = memsql/d' /var/lib/memsql-ops/settings.conf
     sed -i "/started_as_root/c started_as_root = False" /var/lib/memsql-ops/settings.conf
@@ -38,18 +29,35 @@ if [[ "$1" = "memsqld" ]]; then
     rm -f /memsql-ops/memsql-ops.log
     memsql-ops start --ignore-root-error
 
-    #Eliminate Minimum Core Count Requirement
-    memsql-ops memsql-update-config --all --key minimum_core_count --value 0
-    memsql-ops memsql-update-config --all --key minimum_memory_mb --value 0
+    if [[ "$(hostname)" == *"-0" ]]; then
+        NODE_ROLE="master"
+    else
+        NODE_ROLE="leaf"
+    fi
 
-    init_node_directory master
-    init_node_directory leaf
+    if [ ! "$(ls -A /data)" ]; then
+        if [[ "${NODE_ROLE}" == "leaf" ]]; then
+            memsql-ops follow --host ${STATEFULSET_NAME}-0
+        fi
+        memsql-ops memsql-deploy --role ${NODE_ROLE} --developer-edition --version-hash ${MEMSQL_VERSION} || echo "Ignore errors"
+        export NODE_ID=$(memsql-ops memsql-list -q)
 
-    memsql-ops memsql-start --all
-    memsql-ops memsql-list
+        memsql-ops memsql-update-config --key minimum_core_count --value 0 ${NODE_ID}
+        memsql-ops memsql-update-config --key minimum_memory_mb --value 0 ${NODE_ID}
+        memsql-ops memsql-update-config --key socket --value /tmp/memsql.sock ${NODE_ID}
 
-    memsql-ops memsql-update-config --set-global --key default_partitions_per_leaf --value ${PARTITIONS_PER_LEAF:-2} $(memsql-ops memsql-list --memsql-role=master -q)
-    memsql-ops memsql-update-config --all --key maximum_memory --value ${MEMORY_LIMIT} --all
+        memsql-ops memsql-start --all
+        memsql-ops memsql-list
+
+#        memsql-ops memsql-update-config --key maximum_memory --value ${MEMORY_LIMIT} ${NODE_ID}
+
+        if [[ "${NODE_ROLE}" == "master" ]]; then
+            memsql-ops memsql-update-config --set-global --key default_partitions_per_leaf --value ${PARTITIONS_PER_LEAF:-2} ${NODE_ID}
+        fi
+    else
+        memsql-ops memsql-start --all
+        memsql-ops memsql-list
+    fi
 
     # Check for a schema file at /schema/data.sql and load it
     if [[ -e /schema/data.sql ]]; then
