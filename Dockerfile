@@ -49,8 +49,8 @@ COPY simple-benchmark /usr/local/bin/simple-benchmark
 
 COPY memsql-entrypoint.sh /
 
-RUN chgrp -R 0   /data /var/lib/memsql* /etc /tmp && \
-    chmod -R g=u /data /var/lib/memsql* /etc /tmp
+RUN chgrp -R 0   /data /var /etc /tmp && \
+    chmod -R g=u /data /var /etc /tmp
 
 VOLUME ["/data"]
 

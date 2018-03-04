@@ -19,19 +19,5 @@ useradd -r -g memsql -s /bin/false --uid 1000 \
 curl -s $OPS_URL -o /tmp/memsql_ops.tar.gz
 
 # install ops
-mkdir /tmp/memsql-ops
-tar -xzf /tmp/memsql_ops.tar.gz -C /tmp/memsql-ops --strip-components 1
-/tmp/memsql-ops/install.sh \
-    --host 127.0.0.1 \
-    --no-cluster \
-    --ops-datadir /memsql-ops \
-    --memsql-installs-dir /data \
-    --ignore-min-requirements
-
-chgrp -R 0   /memsql-ops
-chmod -R g=u /memsql-ops
-
-memsql-ops stop
-
-# cleanup
-rm -rf /memsql-ops/data/cache/*
+mkdir /etc/memsql-ops
+tar -xzf /etc/memsql_ops.tar.gz -C /etc/memsql-ops --strip-components 1
