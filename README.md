@@ -11,18 +11,15 @@ This image is based on [MemSQL official docker image](https://github.com/memsql/
  
 ## Usage notes 
 
-Assuming you have an account on AbarCloud and have logged into the [CLI](https://docs.abarcloud.com/management/cli-login.html), you can run the following command to import [our template](https://github.com/abarcloud/abar-templates/tree/master/memsql), which will let you create the required DeploymentConfig and Services on Openshift.
-```
-oc project MY_PROJECT_HERE
+This section assumes that you have an account on AbarCloud and have logged into the [CLI](https://docs.abarcloud.com/management/cli-login.html). 
 
-oc create -f https://raw.githubusercontent.com/abarcloud/abar-templates/master/memsql/memsql.yml
-```
-
-## Installation
-To quickly deploy MemSQL on AbarCloud navigate to Add to Project > Browse Catalog > Data Stores > MemSQL.
+1. Fork this repository and customize MemSQL configurations based on your requirements.
+2. Clone [abar-templates](https://github.com/abarcloud/abar-templates) repo and update your clone as follows.
+3. Edit the [imagestream.yml](https://github.com/abarcloud/abar-templates/blob/master/kafka/latest/imagestream.yml#L25) file to point to your fork.
+4. Run `cp .makerc.dist .makerc` and edit `.makerc` to have your project's ID.
+5. Run `make kafka/kafka.yml` to import the template into your project.
+6. From the AbarCloud dashboard, navigate to Add to Project > Browse Catalog > Data Stores > MemSQL.
 This template provides you with basic setup to get started.
-
-For production environment we highly recommended you to fork this repository and customize MemSQL configurations based on your requirements.
 
 ## Usage
 The template will create a service (i.e. `service/memsql`) that exposes database port 3306 and web UI port 9000.
