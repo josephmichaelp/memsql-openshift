@@ -7,7 +7,7 @@
 FROM debian:8.6
 MAINTAINER Carl Sverre <carl@memsql.com>
 
-RUN apt-get update && \
+RUN apt-get update || apt-get update \
     apt-get install -y \
         libmysqlclient-dev \
         mysql-client \
