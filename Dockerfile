@@ -58,4 +58,4 @@ ENTRYPOINT ["/memsql-entrypoint.sh"]
 CMD ["memsqld"]
 
 # expose ports
-EXPOSE 3306 3307 9000
+EXPOSE 3306 3307 9000 8443
